@@ -46,92 +46,155 @@ class Email:
     ...
 
 
-Open/Closed Principle (OCP)
-Software entities (classes, modules, functions) should be open for extension but closed for modification. You should be able to extend the functionality without modifying existing code.
+---
 
-File: ocp.py
+## Open/Closed Principle (OCP)
 
-In this example, new logging mechanisms (e.g., writing to a file or a database) can be added without modifying the existing logging system.
+Software entities (classes, modules, functions) should be open for extension but closed for modification. This principle encourages building systems that can be extended without modifying existing code.
 
-python
-Copy code
+**File:** `ocp.py`
+
+In this example, the `Logger` class is extended by the `ErrorLogger` class to add new logging mechanisms without altering the base `Logger` class. You can extend the system by adding new functionality, such as logging to a file or a database, without modifying the core behavior.
+
+```python
 class Logger:
     # Base class for logging
-    ...
+    def write_log_to_system(self, message):
+        print(f"Log to system: {message}")
 
 class ErrorLogger(Logger):
-    # New functionality (logging to file, database)
-    ...
-Liskov Substitution Principle (LSP)
-Derived classes must be substitutable for their base classes without altering the correctness of the program. This means that subclasses should behave in a way that does not break the functionality of the base class.
+    # Extends functionality for logging to file and database
+    def write_log_to_file(self, message):
+        with open('log.txt', 'a') as writer:
+            writer.write(message + '\n')
+            
+    def write_log_to_db(self, message):
+        con = sqlite3.connect('sqldb.db')
+        con.execute("INSERT INTO ErrorLog (Message) VALUES (?)", (message,))
+        con.commit()
+        con.close()
 
-File: lsp.py
 
-Here, the Ostrich class initially violates LSP because it cannot fly, but the issue is resolved by creating a NonFlyingBird class to handle birds that do not fly.
+## Liskov Substitution Principle (LSP)
 
-python
-Copy code
+Derived classes must be substitutable for their base classes without altering the correctness of the program. This means that subclasses should behave in ways that respect the expectations of the base class.
+
+### Example
+
+In this example, the `Ostrich` class originally violates the LSP because it does not fly, even though it inherits from `Bird`. The solution is to create a new `NonFlyingBird` class for birds that don't fly, maintaining the substitutability.
+
+**File:** `lsp.py`
+
+```python
 class Bird:
     def fly(self):
         return "Flying..."
 
 class Sparrow(Bird):
-    # Substitutable subclass
-    ...
+    # Sparrow can fly, so it is substitutable for Bird
+    def fly(self):
+        return "Sparrow flying high!"
+
+class NonFlyingBird(Bird):
+    # Subclass for birds that do not fly
+    def fly(self):
+        return "Cannot fly, but can run..."
 
 class Ostrich(NonFlyingBird):
-    # Fix: Ostrich does not fly but can run
-    ...
-Interface Segregation Principle (ISP)
+    # Ostrich is a non-flying bird
+    def run(self):
+        return "Ostrich running fast!"
+
+# Example usage
+def make_bird_fly(bird: Bird):
+    print(bird.fly())
+
+# This works correctly
+sparrow = Sparrow()
+make_bird_fly(sparrow)
+
+# This also works correctly, even though the Ostrich cannot fly
+ostrich = Ostrich()
+make_bird_fly(ostrich)  # It will not throw an error but will provide a valid response
+
+
+
+## Interface Segregation Principle (ISP)
+
 Clients should not be forced to depend on interfaces they do not use. This principle encourages creating smaller, more specific interfaces rather than large, general-purpose ones.
 
-File: isp.py
+### Example
 
-In this example, the Workable and Eatable interfaces are separated, ensuring that the RobotWorker class does not need to implement unnecessary methods like eat().
+In this example, `Workable` and `Eatable` are two separate interfaces, ensuring that classes like `RobotWorker` only need to implement the methods relevant to them.
 
-python
-Copy code
+**File:** `isp.py`
+
+```python
 class Workable:
-    # Interface for working
-    ...
+    # Interface for work-related functionality
+    def work(self):
+        pass
 
 class Eatable:
-    # Interface for eating
-    ...
+    # Interface for eat-related functionality
+    def eat(self):
+        pass
 
 class HumanWorker(Workable, Eatable):
-    # Implements both work and eat
-    ...
+    # Human can work and eat
+    def work(self):
+        print("Working...")
+    
+    def eat(self):
+        print("Eating...")
 
 class RobotWorker(Workable):
-    # Implements only work
-    ...
-Dependency Inversion Principle (DIP)
+    # Robot only works, does not eat
+    def work(self):
+        print("Working...")
+
+
+
+## Dependency Inversion Principle (DIP)
+
 High-level modules should not depend on low-level modules. Both should depend on abstractions. This principle decouples high-level logic from low-level implementation details.
 
-File: dip.py
+### Example
 
-In this example, the NotificationService depends on an abstract Notifier class rather than concrete classes like EmailNotifier or SMSNotifier. This allows easy switching or adding new notification methods.
+In this example, `NotificationService` depends on the abstract `Notifier` class, rather than concrete implementations like `EmailNotifier` or `SMSNotifier`. This allows for easy substitution of notifiers without changing the service.
 
-python
-Copy code
+**File:** `dip.py`
+
+```python
 class Notifier:
-    # Abstract notifier class
-    ...
+    # Abstract class for notification behavior
+    def notify(self, message):
+        pass
 
 class EmailNotifier(Notifier):
-    # Low-level email notification
-    ...
+    # Concrete implementation for email notifications
+    def notify(self, message):
+        print(f"Sending email notification: {message}")
 
 class SMSNotifier(Notifier):
-    # Low-level SMS notification
-    ...
+    # Concrete implementation for SMS notifications
+    def notify(self, message):
+        print(f"Sending SMS notification: {message}")
 
 class NotificationService:
-    # High-level service depending on abstraction (Notifier)
-    ...
-How to Run
-Clone this repository:
-bash
-Copy code
-git clone https://github.com/yourusername/solid-principles-python
+    def __init__(self, notifier: Notifier):
+        # High-level module depending on the abstraction
+        self.notifier = notifier
+
+    def send_notification(self, message):
+        self.notifier.notify(message)
+
+# Example usage:
+email_notifier = EmailNotifier()
+sms_notifier = SMSNotifier()
+
+service = NotificationService(email_notifier)
+service.send_notification("Email message")
+
+service = NotificationService(sms_notifier)
+service.send_notification("SMS message")
